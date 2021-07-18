@@ -1,0 +1,9 @@
+name: Raveling
+version: 0.7
+author: Niberthix
+main: com.niberthix.Raveling.Main
+api-version: 1.13
+commands:
+ rvl:
+  usage: /rvl <command>
+  description: Issues the main command 

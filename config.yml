@@ -1,0 +1,8 @@
+Monster:
+   zombie: 20
+   skeleton: 25
+   husk: 30
+Levels:
+   xp: 40
+Info:
+   title: "RareMsn"
