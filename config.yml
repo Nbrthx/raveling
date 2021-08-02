@@ -1,8 +1,94 @@
+NaturalSpawn: false
 Monster:
-   zombie: 20
-   skeleton: 25
-   husk: 30
+   0: #zombie
+      xp: 20
+      damage: 2
+      health: 10
+      speed: 0.3
+      money: 10
+   1: #skeleton
+      xp: 30
+      damage: 5
+      health: 10
+      speed: 0.25
+      money: 15
+   2: #husk
+      xp: 40
+      damage: 3
+      health: 15
+      speed: 0.35
+      money: 20
+   3: #drowned
+      xp: 50
+      damage: 3
+      health: 20
+      speed: 0.25
+      money: 25
+   4: #wither_skeleton
+      xp: 50
+      damage: 8
+      health: 10
+      speed: 0.3
+      money: 25
+   5: #boss_zombie
+      xp: 220
+      damage: 4
+      health: 120
+      speed: 0.3
+      money: 110
+   6: #zombie_pigman
+      xp: 60
+      damage: 5
+      health: 10
+      speed: 0.35
+      money: 50
+   7: #boss_skeleton
+      xp: 280
+      damage: 10
+      health: 120
+      speed: 0.25
+      money: 140
+   8: #boss_husk
+      xp: 340
+      damage: 6
+      health: 180
+      speed: 0.35
+      money: 170
 Levels:
    xp: 40
-Info:
-   title: "RareMsn"
+Missions:
+   killZombie15:
+      mob: 0
+      level: 1
+      amount: 15
+      levelneeded: 1
+      rxp: 200
+      rmoney: 180
+      start: Kill 15 Zombie level 1 or higher
+      finish: Your Mission, Kill Zombie 15 has done
+KitMissions:
+   startermission:
+      killZombie15:
+         material: BLUE_WOOL
+         name: Kill a Zombie
+         lore:
+         - '&aKill zombie 15'
+Items:
+   starter:
+      material: WOODEN_SWORD
+      name: '&bStarter Sword'
+      id: 10000000
+      enchant:
+         DAMAGE_ALL: 3
+         KNOCKBACK: 1
+      effect: 
+         SPEED: 5
+   beginer:
+      material: STONE_SWORD
+      name: '&bBeginer Sword'
+      id: 10000001
+      enchant:
+         DAMAGE_ALL: 3
+         KNOCKBACK: 1
+      effect: 
+         SPEED: 5

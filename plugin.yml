@@ -1,9 +1,19 @@
 name: Raveling
-version: 0.7
+version: 1.6
 author: Niberthix
-main: com.niberthix.Raveling.Main
+main: eu.org.niberthix.Raveling
 api-version: 1.13
+softdepend: [PlaceholderAPI, Vault]
 commands:
  rvl:
   usage: /rvl <command>
-  description: Issues the main command 
+  description: Issues the main command
+permissions:
+ rvl.*:
+  default: op
+  children:
+   rvl.reload: true
+   rvl.mob: true
+   rvl.killspawnmob: true
+   rvl.listspawnmob: true
+   rvl.item: true
