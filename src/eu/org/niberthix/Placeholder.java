@@ -36,16 +36,16 @@ public class Placeholder extends PlaceholderExpansion{
 
     @Override
     public String getVersion() {
-        return "1.0";
+        return "1.8.2";
     }
     
     public String prog(int current, int max) {
-    	int totalBar = 30;
+    	int totalBar = 24;
     	String prog = "";
     	
     	int percent = (int) current * totalBar / max;
     	
-    	prog = Strings.repeat("&a&l|", percent)+Strings.repeat("&8&l|", totalBar-percent);
+    	prog = Strings.repeat("&d&l|", percent)+Strings.repeat("&8&l|", totalBar-percent);
     	
     	return "&f[ "+prog+" &f]";
     }
@@ -53,6 +53,7 @@ public class Placeholder extends PlaceholderExpansion{
     @Override
     public String onPlaceholderRequest(Player p, String identifier) {
     	PlayerLevel plm = Raveling.lvlManager.get(p.getUniqueId());
+    	if(plm == null) return null;
         if (identifier.equals("level")) {
             return plm.getLevel()+"";
         }
@@ -62,7 +63,8 @@ public class Placeholder extends PlaceholderExpansion{
         if (identifier.equals("xpneeded")) {
         	int xpneeded = Raveling.config.getInt("Levels.xp")*(plm.getLevel() * plm.getLevel());
         	return xpneeded+"";
-        }if (identifier.equals("health")) {
+        }
+        if (identifier.equals("health")) {
         	double health = plm.getLevel()*p.getHealth();
         	int fhealth = (int) health;
         	int fmxhealth = Integer.max(fhealth,(int) plm.getLevel()*20);

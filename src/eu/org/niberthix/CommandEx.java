@@ -13,15 +13,10 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.enchantments.Enchantment;
-import org.bukkit.entity.Drowned;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Husk;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.PigZombie;
 import org.bukkit.entity.Player;
-import org.bukkit.entity.Skeleton;
-import org.bukkit.entity.WitherSkeleton;
 import org.bukkit.entity.Zombie;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
@@ -37,6 +32,17 @@ public class CommandEx implements CommandExecutor{
 	public CommandEx(Raveling plugin) {
         this.plugin = plugin;
     }
+	
+	@SuppressWarnings("deprecation")
+	public boolean check(LivingEntity mob, String type) {
+		if(type.equals("ZOMBIE") || type.equals("HUSK") || type.equals("DROWNED") || type.equals("ZOMBIFIED_PIGLIN")) {
+			Zombie ent = (Zombie) mob;
+			if(ent.isBaby()) return false;
+			else if(ent.getPassenger() != null) return false;
+			else return true;
+		}else if(type.equals("SKELETON") || type.equals("WITHER_SKELETON")) return true;
+		return false;
+	}
 	
 	@SuppressWarnings("deprecation")
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
@@ -155,311 +161,113 @@ public class CommandEx implements CommandExecutor{
 	    			Location loc = player.getLocation();
 	    			World wrld = player.getWorld();
 	            	
-	            	if(args[1].equalsIgnoreCase("zombie")) {
-		            	if(args.length == 3 && isInt(args[2]) && sender instanceof Player){
-			            	
-			    			LivingEntity mob = (LivingEntity) wrld.spawnEntity(loc, EntityType.ZOMBIE);
-							Zombie ent = (Zombie) mob;
-							ent.getEquipment().clear();
-							
-							int argint = Integer.parseInt(args[2]);
-							
-							if(ent.isBaby()) {
-								ent.remove();
-			            		sender.sendMessage(clr("&2[&aRVL&2]&r We Have Problem, Try Again"));
-			            		return true;
-			            	}else if(ent.getPassenger() != null) {
-			            		ent.remove();
-			            		sender.sendMessage(clr("&2[&aRVL&2]&r We Have Problem, Try Again"));
-			            		return true;
-			            	}else if(time > 0 && time < 12300) {
-			            		ent.remove();
-			            		sender.sendMessage(clr("&2[&aRVL&2]&r Dont spawn at Day"));
-			                }else {
-			            		ent.setAge(100);
-			            		ent.setCustomName(clr("&cZombie &7[&f"+argint+"&7]"));
-			            		ent.setCustomNameVisible(true);
-			            		ent.setRemoveWhenFarAway(false);
-			            		ent.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED)
-				        		.setBaseValue(Raveling.config.getDouble("Monster.0.speed"));
-			            		
-			            		Raveling.mdata.put(mob.getUniqueId(), new MobData(argint, loc, 0, false));
-			            		
-			            		Raveling.saves.set("Mobld."+mob.getUniqueId(), loc);
-								try {
-			                		Raveling.saves.save(Raveling.savesFile);
-								} catch (IOException e) {
-									e.printStackTrace();
-								}
-			            	}
-		            	}
-	            	}else if(args[1].equalsIgnoreCase("skeleton")) {
-		            	if(args.length == 3 && isInt(args[2]) && sender instanceof Player){
-			    			LivingEntity mob = (LivingEntity) wrld.spawnEntity(loc, EntityType.SKELETON);
-							Skeleton ent = (Skeleton) mob;
-							ent.getEquipment().clear();
-							ent.getEquipment().setItemInMainHand(new ItemStack(Material.BOW));
-							
-							int argint = Integer.parseInt(args[2]);
-							
-							if(time > 0 && time < 12300) {
-								ent.remove();
-			            		sender.sendMessage(clr("&2[&aRVL&2]&r Dont spawn at Day"));
-			                }else {
-			            		ent.setCustomName(clr("&cSkeleton &7[&f"+argint+"&7]"));
-			            		ent.setCustomNameVisible(true);
-			            		ent.setRemoveWhenFarAway(false);
-			            		ent.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED)
-				        		.setBaseValue(Raveling.config.getDouble("Monster.1.speed"));
-			            		
-			            		Raveling.mdata.put(mob.getUniqueId(), new MobData(argint, loc, 1, false));
-			            		
-			            		Raveling.saves.set("Mobld."+mob.getUniqueId(), loc);
-								try {
-			                		Raveling.saves.save(Raveling.savesFile);
-								} catch (IOException e) {
-									e.printStackTrace();
-								}
-			                }
-		            	}
-	            	}else if(args[1].equalsIgnoreCase("husk")) {
-	            		if(args.length == 3 && isInt(args[2]) && sender instanceof Player){
-		            		LivingEntity mob = (LivingEntity) wrld.spawnEntity(loc, EntityType.HUSK);
-			            	Husk ent = (Husk) mob;
-			            	ent.getEquipment().clear();
-			            	
-			            	int argint = Integer.parseInt(args[2]);
-			            	
-			            	if(ent.isBaby()) {
-			            		ent.remove();
-			            		sender.sendMessage(clr("&2[&aRVL&2]&r We Have Problem, Try Again"));
-			            	}else if(ent.getPassenger() != null) {
-			            		ent.remove();
-			            		sender.sendMessage(clr("&2[&aRVL&2]&r We Have Problem, Try Again"));
-			            	}else if(time > 0 && time < 12300) {
-			            		ent.remove();
-			            		sender.sendMessage(clr("&2[&aRVL&2]&r Dont spawn at Day"));
-			                }else {
-								ent.setCustomName(clr("&cHusk &7[&f"+argint+"&7]"));
-								ent.setCustomNameVisible(true);
-								ent.setRemoveWhenFarAway(false);
-								ent.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED)
-				        		.setBaseValue(Raveling.config.getDouble("Monster.2.speed"));
-								
-								Raveling.mdata.put(mob.getUniqueId(), new MobData(argint, loc, 2, false));
-								
-								Raveling.saves.set("Mobld."+mob.getUniqueId(), loc);
-								try {
-			                		Raveling.saves.save(Raveling.savesFile);
-								} catch (IOException e) {
-									e.printStackTrace();
-								}
-			            	}
-	            		}
-	            	}else if(args[1].equalsIgnoreCase("drowned")) {
-	            		if(args.length == 3 && isInt(args[2]) && sender instanceof Player){
-		            		LivingEntity mob = (LivingEntity) wrld.spawnEntity(loc, EntityType.DROWNED);
-			            	Drowned ent = (Drowned) mob;
-			            	ent.getEquipment().clear();
-			            	
-			            	int argint = Integer.parseInt(args[2]);
-			            	
-			            	if(ent.isBaby()) {
-			            		ent.remove();
-			            		sender.sendMessage(clr("&2[&aRVL&2]&r We Have Problem, Try Again"));
-			            	}else if(ent.getPassenger() != null) {
-			            		ent.remove();
-			            		sender.sendMessage(clr("&2[&aRVL&2]&r We Have Problem, Try Again"));
-			            	}else if(time > 0 && time < 12300) {
-			            		ent.remove();
-			            		sender.sendMessage(clr("&2[&aRVL&2]&r Dont spawn at Day"));
-			                }else {
-								ent.setCustomName(clr("&cDrowned &7[&f"+argint+"&7]"));
-								ent.setCustomNameVisible(true);
-								ent.setRemoveWhenFarAway(false);
-								ent.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED)
-				        		.setBaseValue(Raveling.config.getDouble("Monster.3.speed"));
-								
-								Raveling.mdata.put(mob.getUniqueId(), new MobData(argint, loc, 3, false));
-								
-								Raveling.saves.set("Mobld."+mob.getUniqueId(), loc);
-								try {
-			                		Raveling.saves.save(Raveling.savesFile);
-								} catch (IOException e) {
-									e.printStackTrace();
-								}
-			            	}
-	            		}
-	            	}else if(args[1].equalsIgnoreCase("wither_skeleton")) {
-	            		if(args.length == 3 && isInt(args[2]) && sender instanceof Player){
-		            		LivingEntity mob = (LivingEntity) wrld.spawnEntity(loc, EntityType.WITHER_SKELETON);
-			            	WitherSkeleton ent = (WitherSkeleton) mob;
-			            	ent.getEquipment().clear();
-			            	
-			            	int argint = Integer.parseInt(args[2]);
-			            	
-			            	if(time > 0 && time < 12300) {
-			            		ent.remove();
-			            		sender.sendMessage(clr("&2[&aRVL&2]&r Dont spawn at Day"));
-			                }else {
-								ent.setCustomName(clr("&cWither Skeleton &7[&f"+argint+"&7]"));
-								ent.setCustomNameVisible(true);
-								ent.setRemoveWhenFarAway(false);
-								ent.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED)
-				        		.setBaseValue(Raveling.config.getDouble("Monster.4.speed"));
-								
-								Raveling.mdata.put(mob.getUniqueId(), new MobData(argint, loc, 4, false));
-								
-								Raveling.saves.set("Mobld."+mob.getUniqueId(), loc);
-								try {
-			                		Raveling.saves.save(Raveling.savesFile);
-								} catch (IOException e) {
-									e.printStackTrace();
-								}
-			            	}
-	            		}
-	            	}else if(args[1].equalsIgnoreCase("boss_zombie")) {
-		            	if(args.length == 3 && isInt(args[2]) && sender instanceof Player){
-			            	
-			    			LivingEntity mob = (LivingEntity) wrld.spawnEntity(loc, EntityType.ZOMBIE);
-							Zombie ent = (Zombie) mob;
-							ent.getEquipment().clear();
-							ent.getEquipment().setHelmet(new ItemStack(Material.CHAINMAIL_HELMET));
-							ent.getEquipment().setItemInMainHand(new ItemStack(Material.IRON_SWORD));
-							
-							int argint = Integer.parseInt(args[2]);
-							
-							if(ent.isBaby()) {
-								ent.remove();
-			            		sender.sendMessage(clr("&2[&aRVL&2]&r We Have Problem, Try Again"));
-			            		return true;
-			            	}else if(ent.getPassenger() != null) {
-			            		ent.remove();
-			            		sender.sendMessage(clr("&2[&aRVL&2]&r We Have Problem, Try Again"));
-			            		return true;
-			            	}else if(time > 0 && time < 12300) {
-			            		ent.remove();
-			            		sender.sendMessage(clr("&2[&aRVL&2]&r Dont spawn at Day"));
-			                }else {
-			            		ent.setAge(100);
-			            		ent.setCustomName(clr("&cBOSS Zombie &7[&f"+argint+"&7]"));
-			            		ent.setCustomNameVisible(true);
-			            		ent.setRemoveWhenFarAway(false);
-			            		ent.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED)
-				        		.setBaseValue(Raveling.config.getDouble("Monster.5.speed"));
-			            		
-			            		Raveling.mdata.put(mob.getUniqueId(), new MobData(argint, loc, 5, false));
-			            		
-			            		Raveling.saves.set("Mobld."+mob.getUniqueId(), loc);
-								try {
-			                		Raveling.saves.save(Raveling.savesFile);
-								} catch (IOException e) {
-									e.printStackTrace();
-								}
-			            	}
-		            	}
-	            	}else if(args[1].equalsIgnoreCase("zombie_pigman")) {
-		            	if(args.length == 3 && isInt(args[2]) && sender instanceof Player){
-			            	
-			    			LivingEntity mob = (LivingEntity) wrld.spawnEntity(loc, EntityType.ZOMBIFIED_PIGLIN);
-							PigZombie ent = (PigZombie) mob;
-							ent.getEquipment().clear();
-							
-							int argint = Integer.parseInt(args[2]);
-							
-							if(time > 0 && time < 12300) {
-			            		ent.remove();
-			            		sender.sendMessage(clr("&2[&aRVL&2]&r Dont spawn at Day"));
-			                }else {
-			            		ent.setCustomName(clr("&cZombie Pigman &7[&f"+argint+"&7]"));
-			            		ent.setCustomNameVisible(true);
-			            		ent.setRemoveWhenFarAway(false);
-			            		ent.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED)
-				        		.setBaseValue(Raveling.config.getDouble("Monster.6.speed"));
-			            		
-			            		Raveling.mdata.put(mob.getUniqueId(), new MobData(argint, loc, 6, false));
-			            		
-			            		Raveling.saves.set("Mobld."+mob.getUniqueId(), loc);
-								try {
-			                		Raveling.saves.save(Raveling.savesFile);
-								} catch (IOException e) {
-									e.printStackTrace();
-								}
-			            	}
-		            	}
-	            	}else if(args[1].equalsIgnoreCase("boss_skeleton")) {
-		            	if(args.length == 3 && isInt(args[2]) && sender instanceof Player){
-			            	
-			    			LivingEntity mob = (LivingEntity) wrld.spawnEntity(loc, EntityType.SKELETON);
-							Skeleton ent = (Skeleton) mob;
-							ent.getEquipment().clear();
-							ItemStack bowe = new ItemStack(Material.BOW);
-							bowe.addUnsafeEnchantment(Enchantment.ARROW_KNOCKBACK, 1);
-							ent.getEquipment().setItemInMainHand(bowe);
-							ent.getEquipment().setHelmet(new ItemStack(Material.IRON_HELMET));
-							ent.getEquipment().setChestplate(new ItemStack(Material.CHAINMAIL_CHESTPLATE));
-							
-							int argint = Integer.parseInt(args[2]);
-							
-							if(time > 0 && time < 12300) {
-			            		ent.remove();
-			            		sender.sendMessage(clr("&2[&aRVL&2]&r Dont spawn at Day"));
-			                }else {
-			            		ent.setCustomName(clr("&cBOSS Skeleton &7[&f"+argint+"&7]"));
-			            		ent.setCustomNameVisible(true);
-			            		ent.setRemoveWhenFarAway(false);
-			            		ent.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED)
-				        		.setBaseValue(Raveling.config.getDouble("Monster.7.speed"));
-			            		
-			            		Raveling.mdata.put(mob.getUniqueId(), new MobData(argint, loc, 7, false));
-			            		
-			            		Raveling.saves.set("Mobld."+mob.getUniqueId(), loc);
-								try {
-			                		Raveling.saves.save(Raveling.savesFile);
-								} catch (IOException e) {
-									e.printStackTrace();
-								}
-			            	}
-		            	}
-	            	}else if(args[1].equalsIgnoreCase("boss_husk")) {
-	            		if(args.length == 3 && isInt(args[2]) && sender instanceof Player){
-		            		LivingEntity mob = (LivingEntity) wrld.spawnEntity(loc, EntityType.HUSK);
-			            	Husk ent = (Husk) mob;
-			            	ent.getEquipment().clear();
-			            	ent.getEquipment().setHelmet(new ItemStack(Material.LEATHER_HELMET));
-							ent.getEquipment().setChestplate(new ItemStack(Material.LEATHER_CHESTPLATE));
-							ent.getEquipment().setLeggings(new ItemStack(Material.LEATHER_LEGGINGS));
-							ent.getEquipment().setBoots(new ItemStack(Material.LEATHER_BOOTS));
-							
-			            	int argint = Integer.parseInt(args[2]);
-			            	
-			            	if(ent.isBaby()) {
-			            		ent.remove();
-			            		sender.sendMessage(clr("&2[&aRVL&2]&r We Have Problem, Try Again"));
-			            	}else if(ent.getPassenger() != null) {
-			            		ent.remove();
-			            		sender.sendMessage(clr("&2[&aRVL&2]&r We Have Problem, Try Again"));
-			            	}else if(time > 0 && time < 12300) {
-			            		ent.remove();
-			            		sender.sendMessage(clr("&2[&aRVL&2]&r Dont spawn at Day"));
-			                }else {
-								ent.setCustomName(clr("&cBOSS Husk &7[&f"+argint+"&7]"));
-								ent.setCustomNameVisible(true);
-								ent.setRemoveWhenFarAway(false);
-								ent.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED)
-				        		.setBaseValue(Raveling.config.getDouble("Monster.8.speed"));
-								
-								Raveling.mdata.put(mob.getUniqueId(), new MobData(argint, loc, 8, false));
-								
-								Raveling.saves.set("Mobld."+mob.getUniqueId(), loc);
-								try {
-			                		Raveling.saves.save(Raveling.savesFile);
-								} catch (IOException e) {
-									e.printStackTrace();
-								}
-			            	}
-	            		}
-	            	}
+	    			for(String equal : Raveling.config.getConfigurationSection("Monster").getKeys(false)) {
+	        			if(args[1].equalsIgnoreCase(equal)) {
+	        				if(args.length == 3 && isInt(args[2])) {
+	        					int lvl = Integer.valueOf(args[2]);
+	        					
+		        				String type = Raveling.config.getString("Monster."+equal+".type");
+		                		LivingEntity mob = (LivingEntity) wrld.spawnEntity(loc, EntityType.valueOf(type));
+		    					mob.getEquipment().clear();
+		    					String mainhand = Raveling.config.getString("Monster."+equal+".equipment.mainhand");
+		    					String helmet = Raveling.config.getString("Monster."+equal+".equipment.helmet");
+		    					String chestplate = Raveling.config.getString("Monster."+equal+".equipment.chestplate");
+		    					String leggings = Raveling.config.getString("Monster."+equal+".equipment.leggings");
+		    					String boots = Raveling.config.getString("Monster."+equal+".equipment.boots");
+		    					
+		    					if(mainhand != null) {
+		    						if(mainhand.contains("-")) {
+		    							String[] split = mainhand.split("-");
+		    							ItemStack item = new ItemStack(Material.getMaterial(split[0]));
+		    							for(int i = 1; i < split.length; i++) {
+		    								item.addEnchantment(Enchantment.getByName(split[i]), 1);
+		    							}
+		    							mob.getEquipment().setItemInMainHand(item);
+		    						}else {
+		    							ItemStack item = new ItemStack(Material.getMaterial(mainhand));
+		    							mob.getEquipment().setItemInMainHand(item);
+		    						}
+		    					}
+		    					if(helmet != null) {
+		    						if(helmet.contains("-")) {
+		    							String[] split = helmet.split("-");
+		    							ItemStack item = new ItemStack(Material.getMaterial(split[0]));
+		    							for(int i = 1; i < split.length; i++) {
+		    								item.addEnchantment(Enchantment.getByName(split[i]), 1);
+		    							}
+		    							mob.getEquipment().setHelmet(item);
+		    						}else {
+		    							ItemStack item = new ItemStack(Material.getMaterial(helmet));
+		    							mob.getEquipment().setHelmet(item);
+		    						}
+		    					}
+		    					if(chestplate != null) {
+		    						if(chestplate.contains("-")) {
+		    							String[] split = chestplate.split("-");
+		    							ItemStack item = new ItemStack(Material.getMaterial(split[0]));
+		    							for(int i = 1; i < split.length; i++) {
+		    								item.addEnchantment(Enchantment.getByName(split[i]), 1);
+		    							}
+		    							mob.getEquipment().setChestplate(item);
+		    						}else {
+		    							ItemStack item = new ItemStack(Material.getMaterial(chestplate));
+		    							mob.getEquipment().setChestplate(item);
+		    						}
+		    					}
+		    					if(leggings != null) {
+		    						if(leggings.contains("-")) {
+		    							String[] split = leggings.split("-");
+		    							ItemStack item = new ItemStack(Material.getMaterial(split[0]));
+		    							for(int i = 1; i < split.length; i++) {
+		    								item.addEnchantment(Enchantment.getByName(split[i]), 1);
+		    							}
+		    							mob.getEquipment().setLeggings(item);
+		    						}else {
+		    							ItemStack item = new ItemStack(Material.getMaterial(leggings));
+		    							mob.getEquipment().setLeggings(item);
+		    						}
+		    					}
+		    					if(boots != null) {
+		    						if(boots.contains("-")) {
+		    							String[] split = boots.split("-");
+		    							ItemStack item = new ItemStack(Material.getMaterial(split[0]));
+		    							for(int i = 1; i < split.length; i++) {
+		    								item.addEnchantment(Enchantment.getByName(split[i]), 1);
+		    							}
+		    							mob.getEquipment().setBoots(item);
+		    						}else {
+		    							ItemStack item = new ItemStack(Material.getMaterial(boots));
+		    							mob.getEquipment().setBoots(item);
+		    						}
+		    					}
+		                		
+		    	            	if(!check(mob, type)) {
+		    	            		mob.remove();
+		    	            		if(mob.getPassenger() != null) mob.getPassenger().remove();
+		    	            		sender.sendMessage("&2[&aRVL&2]&r We have a problem, try again");
+		    	            	}else if(time > 0 && time < 12300) {
+		    	            		mob.remove();
+		    	            		sender.sendMessage("&2[&aRVL&2]&r Do not spawn at day");
+		    	                }else {
+		    	                	String name = Raveling.config.getString("Monster."+equal+".name");
+		    	            		mob.setCustomName(clr("&c"+name+"&7[&f"+lvl+"&7]"));
+		    	            		mob.setCustomNameVisible(true);
+		    	            		mob.setRemoveWhenFarAway(false);
+		    	            		mob.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED)
+		    		        		.setBaseValue(Raveling.config.getDouble("Monster."+equal+".speed"));
+		    	            		
+		    	            		Raveling.mdata.put(mob.getUniqueId(), new MobData(lvl, loc, equal, new ArrayList<>(), false));
+		    	            		
+		    	            		Raveling.saves.set("Mobld."+mob.getUniqueId(), loc);
+		    						try {
+		    							Raveling.saves.save(Raveling.savesFile);
+		    						} catch (IOException e) {
+		    							e.printStackTrace();
+		    						}
+		    	            	}
+	        				}
+	                	}
+	        		}
             	}else {
             		sender.sendMessage(clr("&2[&aRVL&2]&r You Not Have Permission"));
                     return true;
@@ -484,23 +292,21 @@ public class CommandEx implements CommandExecutor{
 	        		}else if(sender instanceof Player){
 		    			Player player = (Player) sender;
 		    			Boolean hahah = false;
-		    			for(World world : plugin.getServer().getWorlds()) {
-		    		        for(Entity all : world.getEntities()) {
-		    		        	if(Raveling.mdata.get(all.getUniqueId()) != null) {
-		    		        		MobData mob = Raveling.mdata.get(all.getUniqueId());
-			    		        	int xm = mob.getMloc().getBlockX();
-			    		        	int ym = mob.getMloc().getBlockY();
-			    		        	int zm = mob.getMloc().getBlockZ();
-			    		        	int xp = player.getLocation().getBlockX();
-			    		        	int yp = player.getLocation().getBlockY();
-			    		        	int zp = player.getLocation().getBlockZ();
-			    		        	if(xm == xp && ym == yp && zm == zp) {
-			    		        		Raveling.mdata.remove(all.getUniqueId());
-			    		        		all.remove();
-			    		        		Raveling.saves.set("Mobld."+all.getUniqueId(), null);
-			    		        		hahah = true;
-			    		        		sender.sendMessage(clr("&2[&aRVL&2]&r Spawner Deleted"));
-			    		        	}
+		    			for(Entity all : player.getWorld().getEntities()) {
+	    		        	if(Raveling.mdata.get(all.getUniqueId()) != null) {
+	    		        		MobData mob = Raveling.mdata.get(all.getUniqueId());
+		    		        	int xm = mob.getMloc().getBlockX();
+		    		        	int ym = mob.getMloc().getBlockY();
+		    		        	int zm = mob.getMloc().getBlockZ();
+		    		        	int xp = player.getLocation().getBlockX();
+		    		        	int yp = player.getLocation().getBlockY();
+		    		        	int zp = player.getLocation().getBlockZ();
+		    		        	if(xm == xp && ym == yp && zm == zp) {
+		    		        		Raveling.mdata.remove(all.getUniqueId());
+		    		        		all.remove();
+		    		        		Raveling.saves.set("Mobld."+all, null);
+		    		        		hahah = true;
+		    		        		sender.sendMessage(clr("&2[&aRVL&2]&r Spawner Deleted"));
 		    		        	}
 		    		    	}
 		    	        }

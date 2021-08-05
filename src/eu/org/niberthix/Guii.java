@@ -1,5 +1,6 @@
 package eu.org.niberthix;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -44,8 +45,8 @@ public class Guii implements Listener{
         ItemStack item = new ItemStack(material, 1);
         ItemMeta meta = item.getItemMeta();
 
-        meta.setDisplayName(name);
-        meta.setLore(lore);
+        meta.setDisplayName(clr(name));
+        meta.setLore(clr2(lore));
         item.setItemMeta(meta);
 
         return item;
@@ -73,11 +74,11 @@ public class Guii implements Listener{
 		        		Raveling.mission.put(p.getUniqueId(), new Missions(a));
 		        		p.sendMessage(clr("&2[&aRVL&2]&r Accepted Mission: "+Raveling.mission.get(p.getUniqueId()).g8()));
 		    		}
+		            e.setCancelled(true);
 		            p.closeInventory();
             	}
             }
         }
-        e.setCancelled(true);
     }
 
     @EventHandler
@@ -89,5 +90,13 @@ public class Guii implements Listener{
     
     public String clr(String msg) {
     	return ChatColor.translateAlternateColorCodes('&',msg);
+    }
+    
+    public List<String> clr2(List<String> msg) {
+    	List<String> trmsg = new ArrayList<>();
+    	for(String smsg : msg) {
+    		trmsg.add(ChatColor.translateAlternateColorCodes('&',smsg));
+    	}
+    	return trmsg;
     }
 }

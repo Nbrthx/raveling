@@ -1,59 +1,162 @@
 NaturalSpawn: false
+Info:
+   title: "&cRare&6Misson"
 Monster:
-   0: #zombie
+   zombie: #zombie
+      name: Zombie
+      type: ZOMBIE
       xp: 20
       damage: 2
       health: 10
       speed: 0.3
       money: 10
-   1: #skeleton
+      drop:
+         ROTTEN_FLESH: 2-90
+         IRON_INGOT: 1-5
+      equipment:
+         mainhand:
+         helmet:
+         chestplate:
+         leggings:
+         boots:
+   skeleton: #skeleton
+      name: Skeleton
+      type: SKELETON
       xp: 30
       damage: 5
       health: 10
       speed: 0.25
       money: 15
-   2: #husk
+      drop:
+         BONE: 2-90
+         ARROW: 4-20
+         BOW: 1-5
+      equipment:
+         mainhand: BOW
+         helmet:
+         chestplate:
+         leggings:
+         boots:
+   husk: #husk
+      name: Husk
+      type: HUSK
       xp: 40
       damage: 3
       health: 15
       speed: 0.35
       money: 20
-   3: #drowned
+      drop:
+         ROTTEN_FLESH: 2-90
+         STICK: 6-20
+         COOKED_BEEF: 2-10
+      equipment:
+         mainhand:
+         helmet:
+         chestplate:
+         leggings:
+         boots:
+   drowned: #drowned
+      name: Drowned
+      type: DROWNED
       xp: 50
       damage: 3
       health: 20
       speed: 0.25
       money: 25
-   4: #wither_skeleton
+      drop:
+         ROTTEN_FLESH: 2-90
+         TURTLE_HELMET: 1-10
+         TRIDENT: 1-2
+      equipment:
+         mainhand:
+         helmet:
+         chestplate:
+         leggings:
+         boots:
+   wither_skeleton: #wither_skeleton
+      name: Wither Skeleton
+      type: WITHER_SKELETON
       xp: 50
       damage: 8
       health: 10
       speed: 0.3
       money: 25
-   5: #boss_zombie
+      drop:
+      equipment:
+         mainhand: STONE_SWORD
+         helmet:
+         chestplate:
+         leggings:
+         boots:
+   boss_zombie: #boss_zombie
+      name: BOSS Zombie
+      type: ZOMBIE
       xp: 220
       damage: 4
       health: 120
       speed: 0.3
       money: 110
-   6: #zombie_pigman
+      drop:
+         ROTTEN_FLESH: 5-90
+         IRON_INGOT: 4-20
+         GOLD_INGOT: 4-20
+      equipment:
+         mainhand: IRON_SWORD
+         helmet: CHAINMAIL_HELMET
+         chestplate:
+         leggings:
+         boots:
+   zombie_pigman: #zombie_pigman
+      name: Zombie Pigman
+      type: ZOMBIFIED_PIGLIN
       xp: 60
       damage: 5
-      health: 10
-      speed: 0.35
-      money: 50
-   7: #boss_skeleton
+      health: 20
+      speed: 0.3
+      money: 30
+      drop:
+      equipment:
+         mainhand: GOLDEN_SWORD
+         helmet:
+         chestplate:
+         leggings:
+         boots:
+   boss_skeleton: #boss_skeleton
+      name: BOSS Skeleton
+      type: SKELETON
       xp: 280
       damage: 10
       health: 120
       speed: 0.25
       money: 140
-   8: #boss_husk
+      drop:
+         BONE: 7-90
+         ARROW: 11-25
+         BOW: 1-10
+      equipment:
+         mainhand: BOW-ARROW_KNOCKBACK
+         helmet: IRON_HELMET
+         chestplate:
+         leggings:
+         boots:
+   boss_husk: #boss_husk
+      name: BOSS Husk
+      type: HUSK
       xp: 340
       damage: 6
       health: 180
       speed: 0.35
       money: 170
+      drop:
+         ROTTEN_FLESH: 5-90
+         STICK: 15-20
+         COOKED_BEEF: 6-10
+      equipment:
+         mainhand:
+         helmet: LEATHER_HELMET
+         chestplate: LEATHER_CHESTPLATE
+         leggings: LEATHER_LEGGINGS
+         boots: LEATHER_BOOTS
 Levels:
    xp: 40
 Missions:

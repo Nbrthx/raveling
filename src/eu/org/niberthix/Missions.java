@@ -1,7 +1,7 @@
 package eu.org.niberthix;
 
 public class Missions {
-	private int mob;
+	private String mob;
 	private int lvlmob;
 	private int amount;
 	private int lvlndd;
@@ -12,7 +12,7 @@ public class Missions {
 	private String finish;
 	
 	public Missions(String id) {
-		this.mob = Raveling.config.getInt("Missions."+id+".mob");
+		this.mob = Raveling.config.getString("Missions."+id+".mob");
 		this.lvlmob = Raveling.config.getInt("Missions."+id+".levelmob");
 		this.amount = Raveling.config.getInt("Missions."+id+".amount");
 		this.lvlndd = Raveling.config.getInt("Missions."+id+".levelneeded");
@@ -23,7 +23,7 @@ public class Missions {
 		this.finish = Raveling.config.getString("Missions."+id+".finish");
 	}
 	
-	public int g1() {
+	public String g1() {
 		return mob;
 	}
 	

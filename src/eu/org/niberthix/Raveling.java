@@ -22,12 +22,12 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityTransformEvent;
+import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -68,7 +68,7 @@ public class Raveling extends JavaPlugin implements Listener{
     
 	public static boolean naturalspawn;
 	
-    public static void fileConf(Plugin data) {
+    public void fileConf(Raveling data) {
 		if(!data.getDataFolder().exists()) {
 			data.getDataFolder().mkdirs();
 		}
@@ -91,6 +91,8 @@ public class Raveling extends JavaPlugin implements Listener{
 		}
 		configFile = new File(data.getDataFolder(), "config.yml");
 		config = YamlConfiguration.loadConfiguration(configFile);
+		getServer().getConsoleSender()
+		.sendMessage(clr("[&aRaveling&r] File has loaded"));
 	}
     
     public void registerEvents() {
@@ -103,7 +105,7 @@ public class Raveling extends JavaPlugin implements Listener{
 	@Override
     public void onEnable() {
 		getServer().getConsoleSender()
-		.sendMessage(clr("&aRaveling&r has been Enabled"));
+		.sendMessage(clr("[&aRaveling&r] Has been Enabled"));
         
 		lvlManager = new HashMap<>();
         mdata = new HashMap<>();
@@ -123,6 +125,15 @@ public class Raveling extends JavaPlugin implements Listener{
         if(pm.getPlugin("PlaceholderAPI") != null) {
             new Placeholder().register();
         }
+        new UpdateChecker(this, 94929).getVersion(version -> {
+            if (this.getDescription().getVersion().equalsIgnoreCase(version)) {
+            	getServer().getConsoleSender()
+        		.sendMessage(clr("[&aRaveling&r] No new update available"));
+            } else {
+            	getServer().getConsoleSender()
+        		.sendMessage(clr("[&aRaveling&r] &eNew update available"));
+            }
+        });
         
         naturalspawn = config.getBoolean("NaturalSpawn");
         
@@ -134,7 +145,7 @@ public class Raveling extends JavaPlugin implements Listener{
     @Override
     public void onDisable() {
     	getServer().getConsoleSender()
-    	.sendMessage(clr("&aRaveling&r has been Disabled"));
+    	.sendMessage(clr("[&2Raveling&r] Has been Disabled"));
     	
     	saveData();
     }
@@ -149,9 +160,10 @@ public class Raveling extends JavaPlugin implements Listener{
             players.set("Players." + all.getUniqueId() + ".xp", xp);
     	}
     	for(World world : this.getServer().getWorlds()) {
-	    	for(Entity all : world.getEntities()) {
+	    	for(LivingEntity all : world.getLivingEntities()) {
 	        	if(mdata.get(all.getUniqueId()) != null) {
-	        		all.remove();
+	        		all.setHealth(1);
+            		all.damage(100);
 	        	}
 	    	}
     	}
@@ -192,10 +204,10 @@ public class Raveling extends JavaPlugin implements Listener{
 	    		UUID id = UUID.fromString(idc);
 	    		int mlvls = saves.getInt("Mobs."+id+".level");
 	            Location mlocs = saves.getLocation("Mobs." + id + ".location");
-	            int et = saves.getInt("Mobs." + id + ".customtype");
+	            String et = saves.getString("Mobs." + id + ".customtype");
 	            boolean bool = saves.getBoolean("Mobs." + id + ".natural");
 	            
-	            mdata.put(id, new MobData(mlvls, mlocs, et, bool));
+	            mdata.put(id, new MobData(mlvls, mlocs, et, new ArrayList<>(), bool));
 	            new Spawner(this, id);
 	    	}
 	    	saves.set("Mobs", null);
@@ -246,7 +258,15 @@ public class Raveling extends JavaPlugin implements Listener{
         Player player = event.getPlayer();
         UUID id = player.getUniqueId();
         event.setJoinMessage(clr(""+player.getDisplayName()+"&r &aJoined The Game!"));
-        
+        if(player.isOp()) {
+        	new UpdateChecker(this, 94929).getVersion(version -> {
+                if (this.getDescription().getVersion().equalsIgnoreCase(version)) {
+                	player.sendMessage(clr("&2[&aRVL&2]&r &7(OP Only) &fNo new update available"));
+                } else {
+                	player.sendMessage(clr("&2[&aRVL&2]&r &7(OP Only) &e&lNew update available"));
+                }
+            });
+        }
         if (players.get("Players." + player.getUniqueId()) == null) {
             player.sendMessage(clr("&bWelcome to "+getConfig().getString("Info.title")));
             
@@ -265,7 +285,6 @@ public class Raveling extends JavaPlugin implements Listener{
             int xp = players.getInt("Players." + id + ".xp");
             lvlManager.put(id, new PlayerLevel(level, xp));
         }
-        
         if(pm.getPlugin("PlaceholderAPI") != null) {
 	        PlaceholderAPI.setPlaceholders(player, "level");
 	        PlaceholderAPI.setPlaceholders(player, "xp");
@@ -292,16 +311,20 @@ public class Raveling extends JavaPlugin implements Listener{
         }
         lvlManager.remove(id);
     }
-    
+	
 	@EventHandler
+	public void onSwitch(PlayerItemHeldEvent event) {
+		Player p = event.getPlayer();
+		itemAbility(p);
+	}
+	
     public void itemAbility(Player p) {
 		BukkitScheduler scheduler = getServer().getScheduler();
-        scheduler.scheduleSyncDelayedTask(this, new Runnable() {
+        scheduler.runTaskLater(this, new Runnable() {
             @Override
             public void run() {
 				ItemStack item = p.getInventory().getItemInMainHand();
-				
-				if(item != null && config.get("Items") != null && item.getItemMeta().getLore() != null) {
+				if(item != null && !item.getType().isAir() && config.get("Items") != null && item.getItemMeta().getLore() != null) {
 					
 					String gmh = item.getItemMeta().getLore().get(0);
 					boolean itmdb = null != itemdata.get(Integer.parseInt(gmh));
@@ -313,14 +336,15 @@ public class Raveling extends JavaPlugin implements Listener{
 							for(String eff : itemd.geffect()) {
 								String[] effc = eff.split(":");
 								int lvl = Integer.valueOf(effc[1])-1;
-								PotionEffect effect = new PotionEffect(PotionEffectType.getByName(effc[0]), 200, lvl);
+								PotionEffect effect = new PotionEffect(PotionEffectType.getByName(effc[0]), 40, lvl);
 								p.addPotionEffect(effect);
 							}
+							itemAbility(p);
 		                }
 					}
 				}
             }
-        }, 100);
+        }, 40);
 	}
     
 	@EventHandler
@@ -339,19 +363,19 @@ public class Raveling extends JavaPlugin implements Listener{
     		int lvl = lvlManager.get(e.getUniqueId()).getLevel();
     		double mxhlth = 20 * lvl;
     		
-    		if(mobdb && mdata.get(damager.getUniqueId()).getMcty() == 0) {
+    		if(mobdb && mdata.get(damager.getUniqueId()).getMcty().equals("zombie")) {
     			MobData mobd = mdata.get(damager.getUniqueId());
-    			dmg = mobd.getMlvl() * config.getDouble("Monster.0.damage");
+    			dmg = mobd.getMlvl() * config.getDouble("Monster.zombie.damage");
     			event.setDamage(dmg * 20 / mxhlth);
     		}else if(damager.getType() == EntityType.ARROW) {
     			Arrow arrow = (Arrow) damager;
     			Entity shotof = (Entity) arrow.getShooter();
     			boolean smobdb = null != mdata.get(shotof.getUniqueId());
-    			if(smobdb && mdata.get(shotof.getUniqueId()).getMcty() == 1) {
+    			if(smobdb && mdata.get(shotof.getUniqueId()).getMcty().equals("skeleton")) {
     				MobData mobd = mdata.get(shotof.getUniqueId());
-        			dmg = mobd.getMlvl() * config.getDouble("Monster.1.damage");
+        			dmg = mobd.getMlvl() * config.getDouble("Monster.skeleton.damage");
         			event.setDamage(dmg * 20 / mxhlth);
-    			}else if(smobdb && mdata.get(shotof.getUniqueId()).getMcty() == 7) {
+    			}else if(smobdb && mdata.get(shotof.getUniqueId()).getMcty().equals("boss_skeleton")) {
         			MobData mobd = mdata.get(shotof.getUniqueId());
         			if(prcnt <= 2) {
         				Player p = (Player) e;
@@ -361,133 +385,151 @@ public class Raveling extends JavaPlugin implements Listener{
         				PotionEffect effect2 = new PotionEffect(PotionEffectType.CONFUSION, 200, 100);
         				p.addPotionEffect(effect);
         				p.addPotionEffect(effect2);
-        				dmg = mobd.getMlvl() * (config.getDouble("Monster.7.damage")/5*7);
+        				dmg = mobd.getMlvl() * (config.getDouble("Monster.boss_skeleton.damage")/5*7);
     	    			event.setDamage(dmg * 20 / mxhlth);
         			}else {
-    	    			dmg = mobd.getMlvl() * config.getDouble("Monster.7.damage");
+    	    			dmg = mobd.getMlvl() * config.getDouble("Monster.boss_skeleton.damage");
     	    			event.setDamage(dmg * 20 / mxhlth);
         			}
         		}
-    		}else if(mobdb && mdata.get(damager.getUniqueId()).getMcty() == 2) {
-    			MobData mobd = mdata.get(damager.getUniqueId());
-    			dmg = mobd.getMlvl() * config.getDouble("Monster.2.damage");
-    			event.setDamage(dmg * 20 / mxhlth);
-    		}else if(mobdb && mdata.get(damager.getUniqueId()).getMcty() == 3) {
-    			MobData mobd = mdata.get(damager.getUniqueId());
-    			dmg = mobd.getMlvl() * config.getDouble("Monster.3.damage");
-    			event.setDamage(dmg * 20 / mxhlth);
-    		}else if(mobdb && mdata.get(damager.getUniqueId()).getMcty() == 4) {
-    			MobData mobd = mdata.get(damager.getUniqueId());
-    			dmg = mobd.getMlvl() * config.getDouble("Monster.4.damage");
-    			event.setDamage(dmg * 20 / mxhlth);
-    		}else if(mobdb && mdata.get(damager.getUniqueId()).getMcty() == 5) {
-    			MobData mobd = mdata.get(damager.getUniqueId());
-    			if(prcnt <= 2) {
-    				Player p = (Player) e;
-    				ItemStack itemCrackData = new ItemStack(Material.REDSTONE_BLOCK);
-    				p.spawnParticle(Particle.ITEM_CRACK, e.getLocation(), 10, itemCrackData);
-    				PotionEffect effect = new PotionEffect(PotionEffectType.BLINDNESS, 60, 1);
-    				p.addPotionEffect(effect);
-    				dmg = mobd.getMlvl() * (config.getDouble("Monster.5.damage")/5*7);
+    		}else if(mobdb) {
+	    		if(mdata.get(damager.getUniqueId()).getMcty().equals("husk")) {
+	    			MobData mobd = mdata.get(damager.getUniqueId());
+	    			dmg = mobd.getMlvl() * config.getDouble("Monster.husk.damage");
 	    			event.setDamage(dmg * 20 / mxhlth);
-    			}else {
-	    			dmg = mobd.getMlvl() * config.getDouble("Monster.5.damage");
+	    		}else if(mdata.get(damager.getUniqueId()).getMcty().equals("drowned")) {
+	    			MobData mobd = mdata.get(damager.getUniqueId());
+	    			dmg = mobd.getMlvl() * config.getDouble("Monster.drowned.damage");
 	    			event.setDamage(dmg * 20 / mxhlth);
-    			}
-    		}else if(mobdb && mdata.get(damager.getUniqueId()).getMcty() == 6) {
-    			MobData mobd = mdata.get(damager.getUniqueId());
-    			dmg = mobd.getMlvl() * config.getDouble("Monster.6.damage");
-    			event.setDamage(dmg * 20 / mxhlth);
-    		}else if(mobdb && mdata.get(damager.getUniqueId()).getMcty() == 8) {
-    			MobData mobd = mdata.get(damager.getUniqueId());
-    			if(prcnt <= 2) {
-    				Player p = (Player) e;
-    				ItemStack itemCrackData = new ItemStack(Material.REDSTONE_BLOCK);
-    				p.spawnParticle(Particle.ITEM_CRACK, e.getLocation(), 10, itemCrackData);
-    				PotionEffect effect = new PotionEffect(PotionEffectType.SLOW, 60, 10);
-    				PotionEffect effect2 = new PotionEffect(PotionEffectType.BLINDNESS, 60, 10);
-    				p.addPotionEffect(effect);
-    				p.addPotionEffect(effect2);
-    				dmg = mobd.getMlvl() * (config.getDouble("Monster.8.damage")/5*8);
+	    		}else if(mdata.get(damager.getUniqueId()).getMcty().equals("wither_skeleton")) {
+	    			MobData mobd = mdata.get(damager.getUniqueId());
+	    			dmg = mobd.getMlvl() * config.getDouble("Monster.wither_skeleton.damage");
 	    			event.setDamage(dmg * 20 / mxhlth);
-    			}else {
-	    			dmg = mobd.getMlvl() * config.getDouble("Monster.8.damage");
+	    		}else if(mdata.get(damager.getUniqueId()).getMcty().equals("boss_zombie")) {
+	    			MobData mobd = mdata.get(damager.getUniqueId());
+	    			if(prcnt <= 2) {
+	    				Player p = (Player) e;
+	    				ItemStack itemCrackData = new ItemStack(Material.REDSTONE_BLOCK);
+	    				p.spawnParticle(Particle.ITEM_CRACK, e.getLocation(), 10, itemCrackData);
+	    				PotionEffect effect = new PotionEffect(PotionEffectType.BLINDNESS, 60, 1);
+	    				p.addPotionEffect(effect);
+	    				dmg = mobd.getMlvl() * (config.getDouble("Monster.boss_zombie.damage")/5*7);
+		    			event.setDamage(dmg * 20 / mxhlth);
+	    			}else {
+		    			dmg = mobd.getMlvl() * config.getDouble("Monster.boss_zombie.damage");
+		    			event.setDamage(dmg * 20 / mxhlth);
+	    			}
+	    		}else if(mdata.get(damager.getUniqueId()).getMcty().equals("zombie_pigman")) {
+	    			MobData mobd = mdata.get(damager.getUniqueId());
+	    			dmg = mobd.getMlvl() * config.getDouble("Monster.zombie_pigman.damage");
 	    			event.setDamage(dmg * 20 / mxhlth);
-    			}
-    		}else if(event.getCause() == DamageCause.FALL){
-    			event.setDamage(dmg);
-    		}else {
-    			event.setDamage(dmg * 20 / mxhlth);
+	    		}else if(mdata.get(damager.getUniqueId()).getMcty().equals("boss_husk")) {
+	    			MobData mobd = mdata.get(damager.getUniqueId());
+	    			if(prcnt <= 2) {
+	    				Player p = (Player) e;
+	    				ItemStack itemCrackData = new ItemStack(Material.REDSTONE_BLOCK);
+	    				p.spawnParticle(Particle.ITEM_CRACK, e.getLocation(), 10, itemCrackData);
+	    				PotionEffect effect = new PotionEffect(PotionEffectType.SLOW, 60, 10);
+	    				PotionEffect effect2 = new PotionEffect(PotionEffectType.BLINDNESS, 60, 10);
+	    				p.addPotionEffect(effect);
+	    				p.addPotionEffect(effect2);
+	    				dmg = mobd.getMlvl() * (config.getDouble("Monster.boss_husk.damage")/5*8);
+		    			event.setDamage(dmg * 20 / mxhlth);
+	    			}else {
+		    			dmg = mobd.getMlvl() * config.getDouble("Monster.boss_husk.damage");
+		    			event.setDamage(dmg * 20 / mxhlth);
+	    			}
+	    		}else if(event.getCause() == DamageCause.FALL){
+	    			event.setDamage(dmg);
+	    		}else {
+	    			event.setDamage(dmg * 20 / mxhlth);
+	    		}
     		}
     		
-    	}else if(emobdb && mdata.get(e.getUniqueId()).getMcty() == 0) {
-    		MobData mobd = mdata.get(e.getUniqueId());
-    		double mxhlth = config.getDouble("Monster.0.health") * mobd.getMlvl();
-            event.setDamage(dmg * 20 / mxhlth);
-    	}else if(emobdb && mdata.get(e.getUniqueId()).getMcty() == 1) {
-    		MobData mobd = mdata.get(e.getUniqueId());
-    		double mxhlth = config.getDouble("Monster.1.health") * mobd.getMlvl();
-    		
-            event.setDamage(dmg * 20 / mxhlth);
-    	}else if(emobdb && mdata.get(e.getUniqueId()).getMcty() == 2) {
-    		MobData mobd = mdata.get(e.getUniqueId());
-    		double mxhlth = config.getDouble("Monster.2.health") * mobd.getMlvl();
-    		
-            event.setDamage(dmg * 20 / mxhlth);
-    	}else if(emobdb && mdata.get(e.getUniqueId()).getMcty() == 3) {
-    		MobData mobd = mdata.get(e.getUniqueId());
-    		double mxhlth = config.getDouble("Monster.3.health") * mobd.getMlvl();
-    		
-            event.setDamage(dmg * 20 / mxhlth);
-    	}else if(emobdb && mdata.get(e.getUniqueId()).getMcty() == 4) {
-    		MobData mobd = mdata.get(e.getUniqueId());
-    		double mxhlth = config.getDouble("Monster.4.health") * mobd.getMlvl();
-    		
-            event.setDamage(dmg * 20 / mxhlth);
-    	}else if(emobdb && mdata.get(e.getUniqueId()).getMcty() == 5) {
-    		MobData mobd = mdata.get(e.getUniqueId());
-    		double mxhlth = config.getDouble("Monster.5.health") * mobd.getMlvl();
-			if(prcnt <= 3) {
-				event.setDamage(dmg/4 * 20 / mxhlth);
-				if(damager instanceof Player) {
-					Player damager2 = (Player) damager;
-					damager2.playSound(e.getLocation(), Sound.BLOCK_ANVIL_LAND, 1.0F, 10);
+    	}else if(emobdb) {
+	    	if(mdata.get(e.getUniqueId()).getMcty().equals("zombie")) {
+	    		MobData mobd = mdata.get(e.getUniqueId());
+	    		double mxhlth = config.getDouble("Monster.zombie.health") * mobd.getMlvl();
+	            event.setDamage(dmg * 20 / mxhlth);
+	    	}else if(mdata.get(e.getUniqueId()).getMcty().equals("skeleton")) {
+	    		MobData mobd = mdata.get(e.getUniqueId());
+	    		double mxhlth = config.getDouble("Monster.skeleton.health") * mobd.getMlvl();
+	    		
+	            event.setDamage(dmg * 20 / mxhlth);
+	    	}else if(mdata.get(e.getUniqueId()).getMcty().equals("husk")) {
+	    		MobData mobd = mdata.get(e.getUniqueId());
+	    		double mxhlth = config.getDouble("Monster.husk.health") * mobd.getMlvl();
+	    		
+	            event.setDamage(dmg * 20 / mxhlth);
+	    	}else if(mdata.get(e.getUniqueId()).getMcty().equals("drowned")) {
+	    		MobData mobd = mdata.get(e.getUniqueId());
+	    		double mxhlth = config.getDouble("Monster.drowned.health") * mobd.getMlvl();
+	    		
+	            event.setDamage(dmg * 20 / mxhlth);
+	    	}else if(mdata.get(e.getUniqueId()).getMcty().equals("wither_skeleton")) {
+	    		MobData mobd = mdata.get(e.getUniqueId());
+	    		double mxhlth = config.getDouble("Monster.wither_skeleton.health") * mobd.getMlvl();
+	    		
+	            event.setDamage(dmg * 20 / mxhlth);
+	    	}else if(mdata.get(e.getUniqueId()).getMcty().equals("boss_zombie")) {
+	    		MobData mobd = mdata.get(e.getUniqueId());
+	    		double mxhlth = config.getDouble("Monster.boss_zombie.health") * mobd.getMlvl();
+				if(prcnt <= 3) {
+					event.setDamage(dmg/4 * 20 / mxhlth);
+					if(damager instanceof Player) {
+						Player damager2 = (Player) damager;
+						damager2.playSound(e.getLocation(), Sound.BLOCK_ANVIL_LAND, 1.0F, 10);
+					}
+				}else {
+		    		event.setDamage(dmg * 20 / mxhlth);
 				}
-			}else {
-	    		event.setDamage(dmg * 20 / mxhlth);
-			}
-    	}else if(emobdb && mdata.get(e.getUniqueId()).getMcty() == 6) {
-    		MobData mobd = mdata.get(e.getUniqueId());
-    		double mxhlth = config.getDouble("Monster.6.health") * mobd.getMlvl();
-    		
-            event.setDamage(dmg * 20 / mxhlth);
-    	}else if(emobdb && mdata.get(e.getUniqueId()).getMcty() == 7) {
-    		MobData mobd = mdata.get(e.getUniqueId());
-    		double mxhlth = config.getDouble("Monster.7.health") * mobd.getMlvl();
-			if(prcnt <= 3) {
-				event.setDamage(dmg/4 * 20 / mxhlth);
-				if(damager instanceof Player) {
-					Player damager2 = (Player) damager;
-					damager2.playSound(e.getLocation(), Sound.BLOCK_ANVIL_LAND, 1.0F, 10);
+	    	}else if(mdata.get(e.getUniqueId()).getMcty().equals("zombie_pigman")) {
+	    		MobData mobd = mdata.get(e.getUniqueId());
+	    		double mxhlth = config.getDouble("Monster.zombie_pigman.health") * mobd.getMlvl();
+	    		
+	            event.setDamage(dmg * 20 / mxhlth);
+	    	}else if(mdata.get(e.getUniqueId()).getMcty().equals("boss_skeleton")) {
+	    		MobData mobd = mdata.get(e.getUniqueId());
+	    		double mxhlth = config.getDouble("Monster.boss_skeleton.health") * mobd.getMlvl();
+				if(prcnt <= 3) {
+					event.setDamage(dmg/4 * 20 / mxhlth);
+					if(damager instanceof Player) {
+						Player damager2 = (Player) damager;
+						damager2.playSound(e.getLocation(), Sound.BLOCK_ANVIL_LAND, 1.0F, 10);
+					}
+				}else {
+		    		event.setDamage(dmg * 20 / mxhlth);
 				}
-			}else {
-	    		event.setDamage(dmg * 20 / mxhlth);
-			}
-    	}else if(emobdb && mdata.get(e.getUniqueId()).getMcty() == 8) {
-    		MobData mobd = mdata.get(e.getUniqueId());
-    		double mxhlth = config.getDouble("Monster.8.health") * mobd.getMlvl();
-			if(prcnt <= 4) {
-				event.setDamage(dmg/4 * 20 / mxhlth);
-				if(damager instanceof Player) {
-					Player damager2 = (Player) damager;
-					damager2.playSound(e.getLocation(), Sound.BLOCK_ANVIL_LAND, 1.0F, 10);
-					damager2.damage(dmg/2 * 20 / mxhlth, e);
+	    	}else if(mdata.get(e.getUniqueId()).getMcty().equals("boss_husk")) {
+	    		MobData mobd = mdata.get(e.getUniqueId());
+	    		double mxhlth = config.getDouble("Monster.8.health") * mobd.getMlvl();
+				if(prcnt <= 4) {
+					event.setDamage(dmg/4 * 20 / mxhlth);
+					if(damager instanceof Player) {
+						Player damager2 = (Player) damager;
+						damager2.playSound(e.getLocation(), Sound.BLOCK_ANVIL_LAND, 1.0F, 10);
+						damager2.damage(dmg/2 * 20 / mxhlth, e);
+					}
+				}else {
+		    		event.setDamage(dmg * 20 / mxhlth);
 				}
-			}else {
-	    		event.setDamage(dmg * 20 / mxhlth);
-			}
+	    	}
+	    	addKiller(damager,e.getUniqueId());
     	}
     }
+	
+	public void addKiller(Entity damager, UUID e) {
+		if(damager instanceof Player) {
+			Player p = (Player) damager;
+			mdata.get(e).getDmgr().add(p);
+			getServer().getScheduler().runTaskLater(this, new Runnable() {
+				@Override
+				public void run() {
+					mdata.get(e).getDmgr().remove(p);
+				}
+			}, 200L);
+		}
+	}
 	
 	@EventHandler
 	public void onTransform(EntityTransformEvent event) {
@@ -515,9 +557,9 @@ public class Raveling extends JavaPlugin implements Listener{
 	
 	@EventHandler
     public void onEntityTakeDamage(EntityDamageEvent event) {
-        if(!event.getEntity().isDead()) {
+        if(!event.getEntity().isDead() && event.getEntity() instanceof LivingEntity) {
             LivingEntity let = (LivingEntity) event.getEntity();
-            if(let.getHealth() - event.getDamage() <= 1) {
+            if(let.getHealth() - event.getFinalDamage() <= 0) {
                 let.setCustomName(null);
                 let.setCustomNameVisible(false);
             }
@@ -531,7 +573,6 @@ public class Raveling extends JavaPlugin implements Listener{
     	
 		boolean mobdb = null != mdata.get(e.getUniqueId());
 		
-		event.getDrops().clear();
 		event.setDroppedExp(0);
     	
 		if(player instanceof Player) {
@@ -539,9 +580,21 @@ public class Raveling extends JavaPlugin implements Listener{
 			PlayerLevel plm = lvlManager.get(player.getUniqueId());
         	int xp = plm.getXp();
 	        
-        	for(String lists : config.getConfigurationSection("Monster").getKeys(false)) {
-        		int list = Integer.parseInt(lists);
-        		if (mobdb && mdata.get(e.getUniqueId()).getMcty() == list) {
+        	for(String list : config.getConfigurationSection("Monster").getKeys(false)) {
+        		if (mobdb && mdata.get(e.getUniqueId()).getMcty().equals(list)) {
+        			event.getDrops().clear();
+        			if(config.getConfigurationSection("Monster."+list+".drop") != null) {
+	        			for(String mat : config.getConfigurationSection("Monster."+list+".drop").getKeys(false)) {
+	        				int amount = Integer.valueOf(config.getString("Monster."+list+".drop."+mat).split("-")[0]);
+	        				int amnt = new Random().nextInt(amount) + 1;
+	        				int prcn = Integer.valueOf(config.getString("Monster."+list+".drop."+mat).split("-")[1]);
+	        				int prcnt = new Random().nextInt(99) + 1;
+	        				if(prcnt <= prcn && Material.matchMaterial(mat) != null) {
+	        					e.getLocation().getWorld().dropItem(e.getLocation(), new ItemStack(Material.getMaterial(mat), amnt));
+	        				}
+	        			}
+        			}
+        			
     	        	MobData mobd = mdata.get(e.getUniqueId());
     	        	
     	        	if(econb) {
@@ -553,7 +606,7 @@ public class Raveling extends JavaPlugin implements Listener{
     	        	}
     	        	
     	        	if(mission.get(player.getUniqueId()) != null && mission.get(player.getUniqueId()).g1()+"" != null) {
-    	        		int mmob = mission.get(player.getUniqueId()).g1();
+    	        		String mmob = mission.get(player.getUniqueId()).g1();
     	        		int mlvlmob = mission.get(player.getUniqueId()).g2();
     	        		int mamount = mission.get(player.getUniqueId()).g3();
     	        		int mlvlndd = mission.get(player.getUniqueId()).g4();
@@ -561,7 +614,7 @@ public class Raveling extends JavaPlugin implements Listener{
     	        		int rmoney = mission.get(player.getUniqueId()).g6();
     	        		String text = mission.get(player.getUniqueId()).g7();
     	        		int prog = mission.get(player.getUniqueId()).gp();
-    	        		if(mmob == list && mlvlmob <= mobd.getMlvl() && mlvlndd <= plm.getLevel()) {
+    	        		if(mmob.equals(list) && mlvlmob <= mobd.getMlvl() && mlvlndd <= plm.getLevel()) {
     	        			if(prog+1 >= mamount) {
     	        				plm.setXp(xp + rxp);
     	        				if(econb) {
@@ -583,11 +636,16 @@ public class Raveling extends JavaPlugin implements Listener{
     	        			(config.getInt("Monster."+list+".xp") * mobd.getMlvl())+" &bExperience"));
     	            player.giveExp(xp/4);
     	            
-    	            xpcheck(player, plm);
+    	            for(Player multip : mobd.getDmgr()) {
+    	            	PlayerLevel plm2 = lvlManager.get(multip.getUniqueId());
+    	            	xpcheck(multip, plm2);
+    	            }
+    	            mobd.getDmgr().clear();
     	            if(mobd.getNatural() == false) new Spawner(this, e.getUniqueId());
     	        }
         	}
         }else if(mobdb) {
+        	event.getDrops().clear();
         	MobData mobd = mdata.get(e.getUniqueId());
         	if(mobd.getNatural() == false) new Spawner(this, e.getUniqueId());
         }
@@ -635,6 +693,7 @@ public class Raveling extends JavaPlugin implements Listener{
             players.set("Players." + player.getUniqueId() + ".level", lvl);
             players.set("Players." + player.getUniqueId() + ".xp", xp);
             player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 20, 20);
+            player.playSound(player.getLocation(), Sound.BLOCK_ANVIL_USE, 20, 20);
             if(xp >= xpneeded) {
             	xpcheck(player, plm);
             }
